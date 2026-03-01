@@ -8,10 +8,15 @@
     "auth": {
       "type" : "static",
       "requiredScopes": [
+        "oauth",
         "crm.objects.contacts.read",
         "crm.objects.contacts.write",
         "crm.schemas.companies.read",
-        "crm.schemas.companies.write"
+        "crm.schemas.companies.write",
+        "crm.objects.custom.read",
+        "crm.objects.custom.write",
+        "crm.schemas.custom.read",
+        "crm.schemas.custom.write"
       ],
       "optionalScopes": [],
       "conditionallyRequiredScopes": []
@@ -22,7 +27,7 @@
       "img": []
     },
     "support": {
-      "supportEmail": "support@example.com",
+      "supportEmail": "ydhwang@performars.com",
       "documentationUrl": "https://example.com/docs",
       "supportUrl": "https://example.com/support",
       "supportPhone": "+18005555555"
