@@ -49,17 +49,42 @@ const Extension = ({ context, actions }) => {
       try {
         setLoading(true);
         
-        // ⚠️ 보안 경고: 프로덕션에서는 사용하지 마세요
-        // Private App Access Token을 여기에 입력하세요
+        // TODO: 외부 시스템에서 토큰을 주입받도록 변경 예정
         const PRIVATE_APP_TOKEN = 'YOUR_PRIVATE_APP_TOKEN_HERE';
         
-        // Custom Object Type ID (예: '2-12345678')
-        // HubSpot에서 확인 필요: Custom Objects → FMM Personars → URL에서 확인
-        const CUSTOM_OBJECT_TYPE_ID = '2-57656584'; // 또는 '2-XXXXXXXX' 형식, fmm_personars
+        // 1. Schemas API를 통해 fmm_personars Custom Object Type ID 조회
+        console.log("Fetching custom object schemas...");
+        const schemasUrl = 'https://api.hubapi.com/crm/v3/schemas';
+        const schemasResponse = await hubspot.fetch(schemasUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${PRIVATE_APP_TOKEN}`
+          }
+        });
         
+        if (!schemasResponse.ok) {
+          const errorText = await schemasResponse.text();
+          console.error("Schemas API error:", errorText);
+          throw new Error(`Failed to fetch schemas: ${schemasResponse.status}`);
+        }
+        
+        const schemasData = await schemasResponse.json();
+        console.log("Schemas data:", schemasData);
+        
+        // fmm_personars 스키마 찾기
+        const personaSchema = schemasData.results.find(
+          schema => schema.name === 'fmm_persona'
+        );
+        
+        if (!personaSchema) {
+          throw new Error("Custom object 'fmm_personas' not found in account");
+        }
+        
+        const CUSTOM_OBJECT_TYPE_ID = personaSchema.objectTypeId;
+        console.log("Found Custom Object Type ID:", CUSTOM_OBJECT_TYPE_ID);
         console.log("Fetching persona for contact:", context.crm.objectId);
         
-        // 1. Contact에 연결된 fmm_personars association 조회
+        // 2. Contact에 연결된 fmm_personars association 조회
         const associationUrl = `https://api.hubapi.com/crm/v4/objects/contacts/${context.crm.objectId}/associations/${CUSTOM_OBJECT_TYPE_ID}`;
         console.log("Fetching associations from:", associationUrl);
         
@@ -86,7 +111,7 @@ const Extension = ({ context, actions }) => {
           const personaId = associations.results[0].toObjectId;
           console.log("Found persona ID:", personaId);
           
-          // 2. fmm_personars 프로퍼티 조회
+          // 3. fmm_personars 프로퍼티 조회
           const properties = [
             "persona_name",
             "persona_sex",
