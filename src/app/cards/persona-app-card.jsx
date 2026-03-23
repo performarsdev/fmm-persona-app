@@ -49,8 +49,23 @@ const Extension = ({ context, actions }) => {
       try {
         setLoading(true);
         
-        // TODO: 외부 시스템에서 토큰을 주입받도록 변경 예정
-        const PRIVATE_APP_TOKEN = 'YOUR_PRIVATE_APP_TOKEN_HERE';
+        // 외부 백엔드에서 토큰 조회 (portalId, userId, userEmail, appId는 HubSpot이 자동 추가)
+        const tokenResponse = await hubspot.fetch(
+          'https://api.findmymarket.com/hubspot-api/token',
+          { method: 'GET' }
+        );
+
+        if (!tokenResponse.ok) {
+          throw new Error(`Token API error: ${tokenResponse.status}`);
+        }
+
+        const tokenData = await tokenResponse.json();
+
+        if (tokenData.code !== "0000") {
+          throw new Error(tokenData.message || "Failed to retrieve access token");
+        }
+
+        const PRIVATE_APP_TOKEN = tokenData.data.accessToken;
         
         // 1. Schemas API를 통해 fmm_personars Custom Object Type ID 조회
         console.log("Fetching custom object schemas...");
@@ -73,7 +88,7 @@ const Extension = ({ context, actions }) => {
         
         // fmm_personars 스키마 찾기
         const personaSchema = schemasData.results.find(
-          schema => schema.name === 'fmm_persona'
+          schema => schema.name === tokenData.data.customObjectName
         );
         
         if (!personaSchema) {
